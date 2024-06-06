@@ -19,7 +19,7 @@ def check_key(obj):
 CONFIG_SCHEMA = cv.All(
     binary_sensor.binary_sensor_schema(TCA8418ComponentBinarySensor).extend(
         {
-            cv.GenerateID(CONF_TCA8418_ID): cv.use(TCA8418Component),
+            cv.GenerateID(CONF_TCA8418_ID): cv.use_id(TCA8418Component),
             cv.Required(CONF_KEY): cv.int_
         }
     ),
