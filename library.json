@@ -1,0 +1,18 @@
+{
+    "name": "tca8418",
+    "version": "0.0.1",
+    "description": "TCA8418 component for esphome",
+    "keywords": "tca8418, keypad, matrix, esphome",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/evil-dog/esphome-tca8418"
+    },
+    "authors": [],
+    "license": "",
+    "homepage": "https://github.com/evil-dog/esphome-tca8418",
+    "dependencies": {
+
+    },
+    "frameworks": "arduino",
+    "platforms": "*"
+}
