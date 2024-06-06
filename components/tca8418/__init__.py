@@ -12,7 +12,7 @@ MULTI_CONF = True
 tca8418_ns = cg.esphome_ns.namespace("tca8418")
 TCA8418Component = tca8418_ns.class_(
     "TCA8418Component",
-    key_provicer.KeyProvider,
+    key_provider.KeyProvider,
     cg.Component,
     i2c.I2CDevice
 )
