@@ -19,14 +19,14 @@ class TCA8418Listener {
 };
 
 struct TCA8418Interrupt {
-  volatile bool int_recieved(false);
-  bool init(false);
+  volatile bool int_recieved{false};
+  bool init{false};
   static void gpio_intr(TCA8418Interrupt *store);
 };
 
 class TCA8418Component : public key_provider::KeyProvider, public Component, public i2c::I2CDevice {
   public:
-    void setup(InternalGPIOPin *int_pin) override;
+    void setup() override;
     void loop() override;
     void dump_config() override;
 

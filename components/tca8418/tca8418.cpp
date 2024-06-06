@@ -37,20 +37,20 @@ static const uint8_t TCA8418_EVENT_COUNT_MASK = 0b00001111;
 
 void TCA8418Interrupt::gpio_intr(TCA8418Interrupt *store) { store->int_recieved = true; }
 
-void TCA8418Component::setup(InternalGPIOPin *int_pin) {
+void TCA8418Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up TCA8418...");
   uint16_t value;
 
-  if (!this->read_byte_16(TCA8418_REGISTER_CCC, &value)) {
+  if (!this->read_byte_16(TCA8418_REGISTER_CFG, &value)) {
     this->mark_failed();
     return;
   }
 
   ESP_LOGCONFIG(TAG, "Configuring TCA8418...");
 
-  int_pin->setup();
-  this->int_pin_ = int_pin->to_isr();
-  int_pin->attach_interrupt(TCA8418Interrupt::gpio_intr, &this->store_, gpio::INTERRUPT_FALLING_EDGE);
+  this->int_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
+  this->int_pin_->setup();
+  int_pin_->attach_interrupt(TCA8418Interrupt::gpio_intr, &this->store_, gpio::INTERRUPT_FALLING_EDGE);
   this->store_.init = true;
   this->store_.int_recieved = false;
 
@@ -66,7 +66,7 @@ void TCA8418Component::setup(InternalGPIOPin *int_pin) {
   //        0bx000xxxxxxxxxxxx
 //  config |= TCA8418_MULTIPLIER_P0_N1 << 12;
 
-  if (!this->write_byte_16(TCA8418_REGISTER_CCC, config)) {
+  if (!this->write_byte_16(TCA8418_REGISTER_CFG, config)) {
     this->mark_failed();
     return;
   }
