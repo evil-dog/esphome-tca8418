@@ -17,26 +17,26 @@ static const uint8_t TCA8418_REGISTER_GPI_EM1         = 0x20;
 static const uint8_t TCA8418_REGISTER_GPI_EM2         = 0x21;
 static const uint8_t TCA8418_REGISTER_GPI_EM3         = 0x22;
 
-constexpr uint8_t TCA8418_CFG_AUTO_INCREMENT      { 0b1000'0000 };
-constexpr uint8_t TCA8418_CFG_GPI_EVENT_MODE      { 0b0100'0000 };
-constexpr uint8_t TCA8418_CFG_OVERFLOW_MODE       { 0b0010'0000 };
-constexpr uint8_t TCA8418_CFG_INTERRUPT_CFG       { 0b0001'0000 };
-constexpr uint8_t TCA8418_CFG_OVERFLOR_INT_EN     { 0b0000'1000 };
-constexpr uint8_t TCA8418_CFG_KEY_LOCK_INT_EN     { 0b0000'0100 };
-constexpr uint8_t TCA8418_CFG_GPI_INT_EN          { 0b0000'0010 };
-constexpr uint8_t TCA8418_CFG_KEY_INT_EN          { 0b0000'0001 };
+constexpr uint8_t TCA8418_CFG_AUTO_INCREMENT      { 0b10000000 };
+constexpr uint8_t TCA8418_CFG_GPI_EVENT_MODE      { 0b01000000 };
+constexpr uint8_t TCA8418_CFG_OVERFLOW_MODE       { 0b00100000 };
+constexpr uint8_t TCA8418_CFG_INTERRUPT_CFG       { 0b00010000 };
+constexpr uint8_t TCA8418_CFG_OVERFLOR_INT_EN     { 0b00001000 };
+constexpr uint8_t TCA8418_CFG_KEY_LOCK_INT_EN     { 0b00000100 };
+constexpr uint8_t TCA8418_CFG_GPI_INT_EN          { 0b00000010 };
+constexpr uint8_t TCA8418_CFG_KEY_INT_EN          { 0b00000001 };
 
-constexpr uint8_t TCA8418_INT_STATUS_BIT_CAD      { 0b0001'0000 };
-constexpr uint8_t TCA8418_INT_STATUS_BIT_OVERFLOW { 0b0000'1000 };
-constexpr uint8_t TCA8418_INT_STATUS_BIT_KEY_LOCK { 0b0000'0100 };
-constexpr uint8_t TCA8418_INT_STATUS_BIT_GPI      { 0b0000'0010 };
-constexpr uint8_t TCA8418_INT_STATUS_BIT_KEY      { 0b0000'0001 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_CAD      { 0b00010000 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_OVERFLOW { 0b00001000 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_KEY_LOCK { 0b00000100 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_GPI      { 0b00000010 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_KEY      { 0b00000001 };
 
 // Bottom 4 bits in this register are the Event count
-constexpr uint8_t TCA8418_EVENT_COUNT_MASK        { 0b0000'1111 };
+constexpr uint8_t TCA8418_EVENT_COUNT_MASK        { 0b00001111 };
 
 // Key Event Key Status Mask, Bit 7, 0 = key released, 1 = key pressed
-constexpr uint8_t TCA8418_KEY_STATUS_MASK         { 0b1000'0000 };
+constexpr uint8_t TCA8418_KEY_STATUS_MASK         { 0b10000000 };
 
 void TCA8418Interrupt::gpio_intr(TCA8418Interrupt *store) { store->int_received = true; }
 
