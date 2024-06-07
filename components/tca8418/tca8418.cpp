@@ -42,7 +42,7 @@ void TCA8418Interrupt::gpio_intr(TCA8418Interrupt *store) { store->int_received 
 
 void TCA8418Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up TCA8418...");
-  uint16_t value;
+  uint8_t value;
 
   if (!this->read_byte(TCA8418_REGISTER_CFG, &value)) {
     this->mark_failed();
