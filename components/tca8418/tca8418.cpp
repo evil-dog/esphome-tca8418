@@ -6,85 +6,159 @@ namespace tca8418 {
 
 static const char *const TAG = "tca8418";
 
-static const uint8_t TCA8418_REGISTER_CFG = 0x01;
-static const uint8_t TCA8418_REGISTER_INT_STAT = 0x02;
-static const uint8_t TCA8418_REGISTER_KEY_LOC_EC = 0x03;
-static const uint8_t TCA8418_REGISTER_KEY_EVENT_A = 0x04;
-static const uint8_t TCA8418_REGISTER_KP_GPIO1 = 0x1D;  // Rows (same as bit position)
-static const uint8_t TCA8418_REGISTER_KP_GPIO2 = 0x1E;  // Cols 0-7 (same as bit position)
-static const uint8_t TCA8418_REGISTER_KP_GPIO3 = 0x1F;  // Cols 8,9 (lowest 2 bits)
+static const uint8_t TCA8418_REGISTER_CFG             = 0x01;
+static const uint8_t TCA8418_REGISTER_INT_STAT        = 0x02;
+static const uint8_t TCA8418_REGISTER_KEY_LCK_EC      = 0x03;
+static const uint8_t TCA8418_REGISTER_KEY_EVENT_FIFO  = 0x04;
+static const uint8_t TCA8418_REGISTER_GPIO_INT_EN1    = 0x1A;
+static const uint8_t TCA8418_REGISTER_GPIO_INT_EN2    = 0x1B;
+static const uint8_t TCA8418_REGISTER_GPIO_INT_EN3    = 0x1C;
+static const uint8_t TCA8418_REGISTER_GPI_EM1         = 0x20;
+static const uint8_t TCA8418_REGISTER_GPI_EM2         = 0x21;
+static const uint8_t TCA8418_REGISTER_GPI_EM3         = 0x22;
 
-static const uint8_t TCA8418_CFG_BIT_AUTO_INCREMENT = 7;
-static const uint8_t TCA8418_CFG_BIT_GPI_EVENT_MODE = 6;
-static const uint8_t TCA8418_CFG_BIT_OVERFLOW_MODE = 5;
-static const uint8_t TCA8418_CFG_BIT_INTERRUPT_CFG = 4;
-static const uint8_t TCA8418_CFG_BIT_OVERFLOR_INT_EN = 3;
-static const uint8_t TCA8418_CFG_BIT_KEY_LOCK_INT_EN = 2;
-static const uint8_t TCA8418_CFG_BIT_GPI_INT_EN = 1;
-static const uint8_t TCA8418_CFG_BIT_KEY_INT_EN = 0;
+constexpr uint8_t TCA8418_CFG_AUTO_INCREMENT      { 0b1000'0000 };
+constexpr uint8_t TCA8418_CFG_GPI_EVENT_MODE      { 0b0100'0000 };
+constexpr uint8_t TCA8418_CFG_OVERFLOW_MODE       { 0b0010'0000 };
+constexpr uint8_t TCA8418_CFG_INTERRUPT_CFG       { 0b0001'0000 };
+constexpr uint8_t TCA8418_CFG_OVERFLOR_INT_EN     { 0b0000'1000 };
+constexpr uint8_t TCA8418_CFG_KEY_LOCK_INT_EN     { 0b0000'0100 };
+constexpr uint8_t TCA8418_CFG_GPI_INT_EN          { 0b0000'0010 };
+constexpr uint8_t TCA8418_CFG_KEY_INT_EN          { 0b0000'0001 };
 
-static const uint8_t TCA8418_INT_STATUS_BIT_CAD = 4;
-static const uint8_t TCA8418_INT_STATUS_BIT_OVERFLOW = 3;
-static const uint8_t TCA8418_INT_STATUS_BIT_KEY_LOCK = 2;
-static const uint8_t TCA8418_INT_STATUS_BIT_GPI = 1;
-static const uint8_t TCA8418_INT_STATUS_BIT_KEY = 0;
+constexpr uint8_t TCA8418_INT_STATUS_BIT_CAD      { 0b0001'0000 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_OVERFLOW { 0b0000'1000 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_KEY_LOCK { 0b0000'0100 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_GPI      { 0b0000'0010 };
+constexpr uint8_t TCA8418_INT_STATUS_BIT_KEY      { 0b0000'0001 };
 
-static const uint8_t TCA8418_KEY_LOCK_BIT_LOCK_EN = 6;
-static const uint8_t TCA8418_KEY_LOCK_BIT_LOCK2_STATUS = 5;
-static const uint8_t TCA8418_KEY_LOCK_BIT_LOCK1_STATUS = 4;
 // Bottom 4 bits in this register are the Event count
-static const uint8_t TCA8418_EVENT_COUNT_MASK = 0b00001111;
+constexpr uint8_t TCA8418_EVENT_COUNT_MASK        { 0b0000'1111 };
 
-void TCA8418Interrupt::gpio_intr(TCA8418Interrupt *store) { store->int_recieved = true; }
+// Key Event Key Status Mask, Bit 7, 0 = key released, 1 = key pressed
+constexpr uint8_t TCA8418_KEY_STATUS_MASK         { 0b1000'0000 };
+
+void TCA8418Interrupt::gpio_intr(TCA8418Interrupt *store) { store->int_received = true; }
 
 void TCA8418Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up TCA8418...");
   uint16_t value;
 
-  if (!this->read_byte_16(TCA8418_REGISTER_CFG, &value)) {
+  if (!this->read_byte(TCA8418_REGISTER_CFG, &value)) {
     this->mark_failed();
     return;
   }
 
   ESP_LOGCONFIG(TAG, "Configuring TCA8418...");
 
-  this->int_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
-  this->int_pin_->setup();
-  int_pin_->attach_interrupt(TCA8418Interrupt::gpio_intr, &this->store_, gpio::INTERRUPT_FALLING_EDGE);
+  this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
+  this->interrupt_pin_->setup();
+  this->interrupt_pin_->attach_interrupt(TCA8418Interrupt::gpio_intr, &this->store_, gpio::INTERRUPT_FALLING_EDGE);
   this->store_.init = true;
-  this->store_.int_recieved = false;
+  this->store_.int_received = false;
+  ESP_LOGCONFIG(TAG, "Interrupt Attached.");
 
   //  Setup CFG register
-  //  Setup KP_GPIO{1..3} (0x1D..0x1F) registers
+  uint8_t config = 0;
 
-  uint16_t config = 0;
-  // clear single-shot bit
-  //        0b0xxxxxxxxxxxxxxx
-  config |= 0b0000000000000000;
+  // Enable KEY_INT
+  config |= TCA8418_CFG_KEY_INT_EN;
 
-  // setup multiplier
-  //        0bx000xxxxxxxxxxxx
-//  config |= TCA8418_MULTIPLIER_P0_N1 << 12;
+  // Set INT pin to reassert after 50us if still pending interrupts
+  config |= TCA8418_CFG_INTERRUPT_CFG;
 
-  if (!this->write_byte_16(TCA8418_REGISTER_CFG, config)) {
+  if (!this->write_byte(TCA8418_REGISTER_CFG, config)) {
+    ESP_LOGE(TAG, "Failed to write config register.");
     this->mark_failed();
     return;
   }
+  ESP_LOGCONFIG(TAG, "Wrote config register.");
+
+  //  Setup GPIO_INT_EN{1..3} (0x1A..0x1C) registers
+  if (!this->write_byte(TCA8418_REGISTER_GPIO_INT_EN1, 0xFF)) {
+    ESP_LOGE(TAG, "Failed to write GPIO_INT_EN1 register.");
+    this->mark_failed();
+    return;
+  }
+  if (!this->write_byte(TCA8418_REGISTER_GPIO_INT_EN2, 0xFF)) {
+    ESP_LOGE(TAG, "Failed to write GPIO_INT_EN2 register.");
+    this->mark_failed();
+    return;
+  }
+  if (!this->write_byte(TCA8418_REGISTER_GPIO_INT_EN3, 0x03)) {
+    ESP_LOGE(TAG, "Failed to write GPIO_INT_EN3 register.");
+    this->mark_failed();
+    return;
+  }
+  ESP_LOGCONFIG(TAG, "Wrote all GPIO_INT_EN registers.");
+
+  //  Setup GPI_EM{1..3} (0x20..0x22) registers
+  if (!this->write_byte(TCA8418_REGISTER_GPI_EM1, 0xFF)) {
+    ESP_LOGE(TAG, "Failed to write GPI_EM1 register.");
+    this->mark_failed();
+    return;
+  }
+  if (!this->write_byte(TCA8418_REGISTER_GPI_EM2, 0xFF)) {
+    ESP_LOGE(TAG, "Failed to write GPI_EM2 register.");
+    this->mark_failed();
+    return;
+  }
+  if (!this->write_byte(TCA8418_REGISTER_GPI_EM3, 0x03)) {
+    ESP_LOGE(TAG, "Failed to write GPI_EM3 register.");
+    this->mark_failed();
+    return;
+  }
+  ESP_LOGCONFIG(TAG, "Wrote all GPI_EM registers.");
+  ESP_LOGCONFIG(TAG, "Config complete.");
 
   this->prev_config_ = config;
 }
 
 void TCA8418Component::loop() {
-  if (this->store_.int_recieved) {
+  if (this->store_.int_received) {
     //Interrupt recieved, read key presses
     //  Read INT_STAT (0x02) register to find out the type of int
+    uint8_t int_stat;
+    if (!this->read_byte(TCA8418_REGISTER_INT_STAT, &int_stat)) {
+      ESP_LOGW(TAG, "Failed to read INT_STAT register.");
+      this->status_set_warning();
+      return;
+    }
     //     If K_INT bit set, then key is in FIFO
-    //  Read KEY_LOC_EC (0x03) register lowest 3 bits for count of events in FIFO
+    if (int_stat & TCA8418_INT_STATUS_BIT_KEY) {
+      uint8_t key;
+      ESP_LOGD(TAG, "Key event interrupt.");
     //  Read the KEY_EVENT_A (0x04) register for key event
-    //    bit 7: 0 = key released,  1 = key pressed
     //  Repeat read of KEY_EVENT_A register until = 0, 0 means FIFO empty
-    //  Reset INT_STAT flag by writting a 1 to the bit
-    this->store_.int_recieved = false;
+      while (this->read_byte(TCA8418_REGISTER_KEY_EVENT_FIFO, &key) && (key != 0)) {
+    //    bit 7: 0 = key released,  1 = key pressed
+        ESP_LOGD(TAG, "Key event: %d", key);
+        if ((key & TCA8418_KEY_STATUS_MASK) == 0) {
+          //key released
+          for (auto &listener : this->button_listeners_)
+            listener->key_released(key);
+        } else {
+          //key pressed
+          for (auto &listener : this->button_listeners_)
+            listener->key_pressed(key & ~TCA8418_KEY_STATUS_MASK);
+        }
+      }
+    //  Reset INT_STAT flag by writing a 1 to the bit
+    if (!this->write_byte(TCA8418_REGISTER_INT_STAT, TCA8418_INT_STATUS_BIT_KEY)) {
+      ESP_LOGW(TAG, "Failed to clear interrupt status bit.");
+      this->status_set_warning();
+      return;
+    }
+    } else {
+      // unknown or unsupported interrupt.
+      ESP_LOGW(TAG, "Unknown or unsupported interrupt detected.");
+      if (!this->write_byte(TCA8418_REGISTER_INT_STAT, 0xFF)) {
+        ESP_LOGW(TAG, "Failed to clear all interrupt stats bits.");
+        this->status_set_warning();
+        return;
+      }
+    }
+    this->store_.int_received = false;
   }
 }
 
@@ -94,10 +168,10 @@ void TCA8418Component::dump_config() {
   if (this->is_failed()) {
     ESP_LOGE(TAG, "Communication with TCA8418 failed!");
   }
-  LOG_PIN(" INT_PIN: ", int_pin_);
+  LOG_PIN(" INTERRUPT_PIN: ", this->interrupt_pin_);
 }
 
-void TCA8418Component::register_listener(TCA8418Listener *listener) { this->listeners_.push_back(listener); }
+void TCA8418Component::register_listener(TCA8418Listener *listener) { this->button_listeners_.push_back(listener); }
 
 }  // namespace tca8418
 }  // namespace esphome

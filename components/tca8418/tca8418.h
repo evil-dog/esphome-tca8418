@@ -19,7 +19,7 @@ class TCA8418Listener {
 };
 
 struct TCA8418Interrupt {
-  volatile bool int_recieved{false};
+  volatile bool int_received{false};
   bool init{false};
   static void gpio_intr(TCA8418Interrupt *store);
 };
@@ -31,17 +31,17 @@ class TCA8418Component : public key_provider::KeyProvider, public Component, pub
     void dump_config() override;
 
     float get_setup_priority() const override { return setup_priority::DATA; }
-    void set_int_pin(InternalGPIOPin *pin) { int_pin_ = pin; }
+    void set_interrupt_pin(InternalGPIOPin *pin) { this->interrupt_pin_ = pin; }
 
     void register_listener(TCA8418Listener *listener);
 
   protected:
     uint16_t prev_config_{0};
-    InternalGPIOPin *int_pin_;
+    InternalGPIOPin *interrupt_pin_;
 
     TCA8418Interrupt store_;
 
-    std::vector<TCA8418Listener *> listeners_{};
+    std::vector<TCA8418Listener *> button_listeners_{};
 };
 
 }  // namespace tca8418

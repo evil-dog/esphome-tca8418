@@ -11,9 +11,12 @@ TCA8418ComponentBinarySensor = tca8418_ns.class_(
 )
 
 def check_key(obj):
-  # do checks to validate CONF_KEY
-  # raise cv.Invalid("error_msg")  when CONF_KEY is invalid
-  # if key number is >=1 <= 80 it is valid.
+  # Valid key numbers are >=97 and <=114
+  if CONF_KEY in obj:
+    if obj[CONF_KEY] < 97 or obj[CONF_KEY] > 114:
+      raise cv.Invalid("The key code must be between 97 and 114")
+  else:
+    raise cv.Invalid("Missing key code.")
   return obj
 
 CONFIG_SCHEMA = cv.All(

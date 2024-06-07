@@ -2,7 +2,7 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
 from esphome.components import i2c, key_provider
-from esphome.const import CONF_ID, CONF_PIN
+from esphome.const import CONF_ID, CONF_INTERRUPT_PIN
 
 AUTO_LOAD = ["key_provider"]
 
@@ -18,17 +18,16 @@ TCA8418Component = tca8418_ns.class_(
 )
 
 CONF_TCA8418_ID = "tca8418_id"
-CONF_INTERRUPT_PIN = "int_pin"
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(TCA8418Component),
-            cv.Required(CONF_INTERRUPT_PIN): pins.gpio_input_pin_schema
+            cv.Required(CONF_INTERRUPT_PIN): pins.internal_gpio_input_pin_schema
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
-    .extend(i2c.i2c_device_schema(None))
+    .extend(i2c.i2c_device_schema(0x68))
 )
 
 async def to_code(config):
@@ -36,5 +35,5 @@ async def to_code(config):
     await cg.register_component(var, config)
     await i2c.register_i2c_device(var, config)
 
-    int_pin = await cg.gpio_pin_expression(config[CONF_INTERRUPT_PIN])
-    cg.add(var.set_int_pin(int_pin))
+    interrupt_pin = await cg.gpio_pin_expression(config[CONF_INTERRUPT_PIN])
+    cg.add(var.set_interrupt_pin(interrupt_pin))
