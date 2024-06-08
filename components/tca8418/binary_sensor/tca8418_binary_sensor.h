@@ -22,7 +22,7 @@ class TCA8418ComponentBinarySensor : public TCA8418Listener, public binary_senso
       if (!this->has_key_)
         return;
       if (key == this->key_)
-        this->publish_state(true);
+        this->publish_state(false);
     }
 
   protected:
