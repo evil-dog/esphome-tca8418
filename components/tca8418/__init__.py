@@ -27,7 +27,7 @@ CONFIG_SCHEMA = (
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
-    .extend(i2c.i2c_device_schema(0x68))
+    .extend(i2c.i2c_device_schema(0x34))
 )
 
 async def to_code(config):
